@@ -1,0 +1,924 @@
+--Drop table Commands;
+
+
+    Drop table ORDERS CASCADE CONSTRAINTS;
+    Drop table WAITERS CASCADE CONSTRAINTS;
+    Drop table RESTAURANT_INVENTORY CASCADE CONSTRAINTS;
+    Drop table RESTAURANTS CASCADE CONSTRAINTS;
+    Drop table Menu_Item CASCADE CONSTRAINTS;
+    Drop table CUSTOMERS CASCADE CONSTRAINTS;
+    Drop table CUISINE_TYPE CASCADE CONSTRAINTS;
+
+
+--drop sequence ;
+    drop sequence Cuisine_Type_ID_SEQ;
+    drop sequence Customer_ID_SEQ;
+    drop sequence Menu_Item_ID_SEQ;
+    drop sequence Restaurant_ID_SEQ;
+    drop sequence Waiter_ID_SEQ;
+    drop sequence Order_ID_SEQ;
+
+
+--Creation of tables;
+
+
+--Create table cuisineType
+create table CUISINE_TYPE(
+    Cuisine_Type_ID int ,
+    Cuisine_name varchar(50),
+primary key(Cuisine_Type_ID)
+);
+
+
+--Create table customer
+create table CUSTOMERS
+    (Customer_ID int not null,
+    Customer_Name varchar(50),
+    Email varchar(100),
+    Street_Address varchar(100),
+    City varchar(50),
+    state VARCHAR(50),
+    zip char(5),
+    Credit_Card number(16),
+    primary key(Customer_ID));
+
+
+--Create table Menu_Item
+create table Menu_Item(
+    Menu_Item_ID int,
+    Cuisine_type_ID int,
+    Menu_item_name varchar(50),
+    price float,
+    primary key(Menu_Item_ID),
+    foreign key(Cuisine_type_ID) references CUISINE_TYPE(Cuisine_type_ID));
+
+
+
+
+--Create table restaurant
+create table RESTAURANTS (
+    Restaurant_ID int,
+    Restaurant_Name varchar(100),
+    Cuisine_type_ID int,
+    Str_Address varchar(200),
+    city varchar(50),
+    State varchar(200),
+    zip char(5),
+    primary key(Restaurant_ID),
+    foreign key(Cuisine_type_ID) references CUISINE_TYPE(Cuisine_type_ID));
+
+
+--Create table RESTAURANT_INVENTORY
+create table RESTAURANT_INVENTORY(
+    Menu_item_ID int,
+    Restaurant_ID int,
+    Menu_item_Name varchar(50),
+    Quantity int,
+    foreign key(Menu_item_ID) references Menu_Item(Menu_item_ID),
+    foreign key(Restaurant_ID) references RESTAURANTS(Restaurant_ID));
+
+
+
+
+--Create table waiters
+create table WAITERS(
+    Waiter_ID int,
+    Restaurant_ID int,
+    Waiter_name varchar(50),
+    primary key(Waiter_ID),
+    foreign key(Restaurant_ID) references RESTAURANTS(Restaurant_ID)
+);
+
+
+--create orders table 
+CREATE TABLE Orders (
+    order_id int NOT NULL,
+        restaurant_ID  int,
+        customer_ID  int,
+        menu_item_ID int,
+        Waiter_id int,
+        order_date date,
+        amount_paid float,
+        tip float,
+                FOREIGN KEY(Restaurant_ID) REFERENCES Restaurants(Restaurant_ID),
+                FOREIGN KEY (customer_ID) REFERENCES Customers(customer_ID),
+                FOREIGN KEY (Menu_item_ID) REFERENCES Menu_item(Menu_item_ID),
+                FOREIGN KEY (Waiter_id) REFERENCES Waiters(Waiter_id),
+        PRIMARY KEY(Order_id));
+        
+        
+--Creation of sequences for the primary keys  
+create sequence Cuisine_Type_ID_SEQ start with 1 increment by 1;
+create sequence Customer_ID_SEQ start with 101 increment by 1; 
+create sequence Menu_Item_ID_SEQ start with 201 increment by 1; 
+create sequence Restaurant_ID_SEQ start with 301 increment by 1; 
+create sequence Waiter_ID_SEQ start with 401 increment by 1; 
+create sequence Order_ID_SEQ start with 501 increment by 1; 
+/
+
+
+-- Helper Functions for each table --
+create or replace function Find_Cuisine_Type_Id(cui_name in varchar)
+    return number
+    is 
+    Cui_id number;
+    begin
+    select cuisine_type_id into cui_id from cuisine_type where cuisine_name= cui_name;
+    return cui_id;
+    exception
+        when no_data_found then
+        dbms_output.put_line('no such data');
+        return -1;
+    end;
+/
+-- helper function to find customerID
+create or replace function FIND_CUSTOMER_ID (name in VARCHAR)
+    return INT
+    is 
+    CustomerID int;
+    begin
+    select Customer_ID into CustomerID from customers where customer_name=name;
+    return customerID;
+    exception when no_data_found then 
+    dbms_output.put_line('No data found');
+    when others then
+    DBMS_output.put_line('Too many rows');
+    end;
+/
+
+
+-- Creating a function named FIND_MENU_ITEM_ID with name as an input- Member-3
+Create or replace function FIND_MENU_ITEM_ID (MenuItemName in Varchar)
+    return number
+    Is
+    menuitemid number;
+    Begin
+        select Menu_item_ID into menuitemid from Menu_Item where Menu_Item_Name=MenuItemName;
+        return menuitemid;
+-- If no Items is found the exception block is executed
+    exception
+        when no_data_found then
+        dbms_output.put_line('no items found');
+        return -1;
+    End;
+/
+
+
+-- function to get restaurant_id
+create or replace function Find_Restaurant_Id (rest_name in varchar)
+    return int
+    is 
+    rest_id int;
+    begin 
+    select restaurant_id into rest_id from restaurants where restaurant_name=rest_name;
+    return rest_id;
+    exception
+        when no_data_found then
+        dbms_output.put_line('no such data');
+        return -1;
+    end;
+/
+ --function to get the waiter_id
+Create or replace function FIND_Waiter_ID (waiter_N in varchar)
+    return number
+    IS
+    wait_id number;
+    BEGIN
+    select waiter_id into Wait_id from waiters where waiter_name = Waiter_N;
+    return Wait_id;
+    exception
+    when no_data_found then
+    dbms_output.put_line('no such waiters');
+    return -1;
+    End;
+/
+
+
+-- helper function to to find order_id
+CREATE OR REPLACE function FIND_ORDER_ID(O_date date)
+    return int
+    is
+    orderID int;
+    Begin
+    select order_id into orderID from orders where order_date=O_date;
+    return orderID;
+    exception
+    when no_data_found then 
+    dbms_output.put_line('No data found');
+    when others then 
+    dbms_output.put_line('Too many rows');
+    end;
+/
+
+
+-- helper function to find customer name 
+CREATE OR REPLACE FUNCTION FIND_CUSTOMER_NAME(cust_id IN integer)
+RETURN varchar IS
+name varchar(50); -- creating variable that will be returned
+BEGIN
+SELECT customer_name INTO name FROM Customers WHERE customer_id = cust_id;
+RETURN name;
+EXCEPTION
+when no_data_found then dbms_output.put_line('No such customer');
+return -1;
+END;
+/
+
+
+-- end of helper functions
+
+
+-- member 1-- 
+
+
+--------Procedure to insert values in Cuisine_Type table-----------
+create or replace procedure add_cusinetype (cuisinename in varchar)
+is
+begin
+ insert into cuisine_type(cuisine_type_id,cuisine_name) values (cuisine_type_id_seq.nextval,cuisinename);
+ commit;
+end; 
+/
+
+
+
+
+---------------Inserting values into Cuisine_Type table----------------
+Begin
+        add_CuisineType(Cuisine_Type_ID_seq.nextval,'American');
+        add_CuisineType(Cuisine_Type_ID_seq.nextval,'Italian');
+        add_CuisineType(Cuisine_Type_ID_seq.nextval,'BBQ');
+        add_CuisineType(Cuisine_Type_ID_seq.nextval,'Indian');
+        add_CuisineType(Cuisine_Type_ID_seq.nextval,'Ethiopian');
+End;
+/
+
+
+select * from cuisine_type;
+/
+
+
+-------Procedure to insert values in Restaurants table
+create or replace procedure add_Restaurants(
+ R_ID IN Restaurants.Restaurant_ID%type,
+ RName IN Restaurants.Restaurant_Name%type,
+ RStreet IN Restaurants.Str_Address%type,
+ RCity IN Restaurants.City%type,
+ RState IN Restaurants.State%type,
+ RZip IN Restaurants.Zip%type ,
+ CR_ID IN Restaurants.Cuisine_Type_ID%type)
+IS
+Begin
+ Insert into Restaurants(Restaurant_ID, Restaurant_Name, Str_Address, City, State, Zip, Cuisine_Type_ID)
+ Values(R_ID, RName, RStreet, RCity, RState, RZip, CR_ID);
+ EXCEPTION when no_data_found then 
+ dbms_output.put_line('No data found, this restaurant is not in the Database');
+ when others then
+ dbms_output.put_line('Too many rows');
+END;
+/
+
+
+-------Inserting values into Restaurant table---------
+Begin
+        add_Restaurants(Restaurant_ID_seq.nextval,'Ribs_R_US', '1313 Mockingbird', 'CT', 'MD', 21250, find_cuisine_type_id('American'));
+        add_Restaurants(Restaurant_ID_seq.nextval,'Bella_Italia', 'Paterson Str', 'AT', 'MD', 21043, find_cuisine_type_id('Italian') );
+        add_Restaurants(Restaurant_ID_seq.nextval,'Roma', 'Queens', 'AT', 'MD', 21043, find_cuisine_type_id('Italian') );
+        add_Restaurants(Restaurant_ID_seq.nextval,'Bull Roast', '14 Brooklyn', 'NYC', 'NY', 10013, find_cuisine_type_id('BBQ') );
+        add_Restaurants(Restaurant_ID_seq.nextval,'Taj Mahal', '21 strt Manhattan', 'NYC', 'NY', 10013, find_cuisine_type_id('Indian') );
+        add_Restaurants(Restaurant_ID_seq.nextval,'Selasie', 'Jersey strt', 'philadelphia', 'PA', 16822, find_cuisine_type_id('Ethiopian') );
+    add_Restaurants(Restaurant_ID_seq.nextval,'Ethiop', 'Loganton','Beech Creek','PA',16822,find_cuisine_type_id('Ethiopian'));        
+End;
+/
+
+
+--------query to show information about all restaurants that were added to the DB.-------
+select * from restaurants;
+/
+
+
+--------Procedure to insert values into Menu_Item table-------
+create or replace procedure Menu (C_TNAME IN Varchar, Menu_Item_Name1 In Varchar, Price1 IN Number)
+IS
+Cuisine_Type_ID1 INT;
+-- Calling a function for ID of Cuisine Type
+Begin
+Cuisine_Type_ID1:=FIND_CUISINE_TYPE_ID(C_TNAME);
+Insert INTO Menu_Item(Menu_item_ID,Cuisine_type_Id,Menu_Item_Name,Price) Values
+(Menu_Item_ID_SEQ.nextval,Cuisine_Type_ID1,Menu_Item_Name1,Price1);
+EXCEPTION
+WHEN OTHERS THEN
+DBMS_OUTPUT.Put_line('Error adding desired Menu.');
+End;
+/
+
+
+---------Inserting values into Menu_Item table---------
+exec Menu('American','Burger',10);
+exec Menu('American','Fries',5);
+exec Menu('American','Pasta',15);
+exec Menu('American','Salad',10);
+exec Menu('American','Salmon',20);
+exec Menu('Italian','Lasanga',15);
+exec Menu('Italian','Meatballs',10);
+exec Menu('Italian','Spaghetti',15);
+exec Menu('Italian','Pizza',20);
+exec Menu('BBQ','Steak',25);
+exec Menu('BBQ','burger',10);
+exec Menu('BBQ','pork_loin',15);
+exec Menu('BBQ','fillet_mignon',30);
+exec Menu('Indian','dal_soup',10);
+exec Menu('Indian','rice',5);
+exec Menu('Indian','tandoori_chicken',10);
+exec Menu('Indian','samosa',8);
+exec Menu('Ethiopian','meat_chunks',12);
+exec Menu('Ethiopian','legume_stew',10);
+exec Menu('Ethiopian','flatbread',3);
+/
+
+
+--------query to show information about all Menu items that were added to the DB.-------
+SELECT * FROM Menu_Item;
+/
+
+
+
+
+create or replace procedure Restaurant_Invent (Restaurant_Name1 IN Varchar, MENU_ITEMS_NAME1 IN VARCHAR, Menu_Item_Name1 In Varchar, Quantity1 In Number)
+IS
+RESTAURANT_ID1 INT;
+Menu_Item_Id1 INT;
+-- Calling a function to get a Restaurant ID and Menu Item ID 
+Begin
+RESTAURANT_ID1:=FIND_RESTAURANT_ID(Restaurant_Name1);
+Menu_Item_Id1:=FIND_MENU_ITEM_ID(Menu_Items_Name1);
+Insert INTO RESTAURANT_INVENTORY(Menu_Item_ID,Restaurant_ID,Menu_Item_Name,QUANTITY) Values
+(Menu_Item_ID1,restaurant_ID1,Menu_Item_Name1,Quantity1);
+EXCEPTION
+WHEN OTHERS THEN
+DBMS_OUTPUT.Put_line('Error adding desired Restaurants menu.');
+End;
+/
+--------- Inserting a records into Restaurant_Inventory table----------
+exec Restaurant_Invent('Ribs_R_US','Burger','Burger',50);
+exec Restaurant_Invent('Ribs_R_US','Fries','Fries',150);
+exec Restaurant_Invent('Bella_Italia','Lasanga','lasanga',10);
+exec Restaurant_Invent('Bull Roast','Steak','Steak',15);
+exec Restaurant_Invent('Bull Roast','pork_loin','pork_loin',50);
+exec Restaurant_Invent('Bull Roast','fillet_mignon','fillet_mignon',5);
+exec Restaurant_Invent('Taj Mahal','dal_soup','dal_soup',50);
+exec Restaurant_Invent('Taj Mahal','rice','rice',500);
+exec Restaurant_Invent('Taj Mahal','samosa','samosa',150);
+exec Restaurant_Invent('Selasie','meat_chunks','meat_chunks',150);
+exec Restaurant_Invent('Selasie','legume_stew','legume_stew',150);
+exec Restaurant_Invent('Selasie','flatbread','flatbread',500);
+exec Restaurant_Invent('Ethiop','meat_chunks','meat_chunks',150);
+exec Restaurant_Invent('Ethiop','legume_stew','legume_stew',150);
+exec Restaurant_Invent('Ethiop','flatbread','flatbread',500);
+
+
+show errors;
+
+
+--------query to show information about all Inventory that were added to the DB.-------
+select * from Restaurant_Inventory;
+/
+
+
+Declare
+cursor c1 is select Menu_ITEM_NAME, Quantity from restaurant_inventory where restaurant_id in (select restaurant_ID from restaurants where restaurant_name='Ethiop');
+MENU_NAME varchar(50);
+Quantity_Number int;
+NoDataFound Exception;
+Begin
+DBMS_OUTPUT.Put_line('=========  Initial Inventory for Ethiop restaurant =========');
+Open c1;
+loop
+fetch c1 into Menu_Name,Quantity_Number;
+exit when c1%notfound;
+dbms_output.put_line('Menu_Name: ' || Menu_Name || ' Quantity' || Quantity_Number);
+End loop;
+if c1%rowcount=0 then
+raise NoDataFound;
+end if;
+EXCEPTION
+WHEN NoDataFound THEN
+DBMS_OUTPUT.Put_line (' No Data Found with respective restaurant');
+End;
+/
+
+
+create or replace procedure Update_Invent (Restaurant_Name1 IN Varchar, MENU_ITEM_NAME1 IN VARCHAR, Num_Quantity In Number)
+IS
+REST_ID INT;
+Menu_Id INT;
+Numm_Quantity INT;
+-- Calling a function to get a Restauran ID and Menu Item ID 
+Begin
+REST_ID:=FIND_RESTAURANT_ID(Restaurant_Name1);
+Menu_Id:=FIND_MENU_ITEM_ID(Menu_Item_Name1);
+Update RESTAURANT_INVENTORY set quantity = quantity-Num_Quantity where Menu_item_ID = menu_id and restaurant_id=rest_ID;
+EXCEPTION
+WHEN OTHERS THEN
+DBMS_OUTPUT.Put_line('Error in updating the restaurant_inventory');
+End;
+/
+
+
+-- calling the update_invent procedure
+exec Update_Invent('Taj Mahal','rice',25);
+exec Update_Invent('Selasie','meat_chunks',50);
+exec Update_Invent('Bull Roast','fillet_mignon',2);
+exec Update_Invent('Bull Roast','fillet_mignon',2);
+exec Update_Invent('Ethiop','meat_chunks',30);
+exec Update_Invent('Ethiop','meat_chunks',30);
+exec Update_Invent('Ethiop','legume_stew',20);
+show errors;
+
+
+select * from restaurants;
+select * from restaurant_inventory;
+/
+
+
+
+
+Declare
+cursor c1 is select Menu_ITEM_NAME, Quantity from restaurant_inventory where restaurant_id in (select restaurant_ID from restaurants where restaurant_name='Ethiop');
+MENU_NAME varchar(50);
+Quantity_Number int;
+NoDataFound Exception;
+Begin
+DBMS_OUTPUT.Put_line('===========  Final Inventory for Ethiop restaurant ==========');
+Open c1;
+loop
+fetch c1 into Menu_Name,Quantity_Number;
+exit when c1%notfound;
+dbms_output.put_line('Menu_Name: ' || Menu_Name || ' Quantity' || Quantity_Number);
+End loop;
+if c1%rowcount=0 then
+raise NoDataFound;
+end if;
+EXCEPTION
+WHEN NoDataFound THEN
+DBMS_OUTPUT.Put_line (' No Data Found with respective restaurant');
+End;
+/
+
+
+--Creation of procedure ;
+create or replace procedure insertwaiters(r_id in int, w_name in varchar)
+is
+begin
+insert into waiters values(Waiter_ID_SEQ.nextval,r_id,w_name);
+exception
+ when no_data_found then
+ dbms_output.put_line('Not inserted');
+end;
+/ 
+
+
+-- calling the procedure insert waiters
+exec insertwaiters(find_restaurant_id('Ribs_R_US'),'Jack');
+exec insertwaiters(find_restaurant_id('Ribs_R_US'),'Jill');
+exec insertwaiters(find_restaurant_id('Ribs_R_US'),'Wendy');
+exec insertwaiters(find_restaurant_id('Ribs_R_US'),'Hailey');
+exec insertwaiters(find_restaurant_id('Bella_Italia'),'Mary');
+exec insertwaiters(find_restaurant_id('Bella_Italia'),'Pat');
+exec insertwaiters(find_restaurant_id('Bella_Italia'),'Michael');
+exec insertwaiters(find_restaurant_id('Bella_Italia'),'Rakesh');
+exec insertwaiters(find_restaurant_id('Bella_Italia'),'Verma'); 
+exec insertwaiters(find_restaurant_id('Roma'),'Mike');
+exec insertwaiters(find_restaurant_id('Roma'),'Judy');
+exec insertwaiters(find_restaurant_id('Selasie'),'Trevor');
+exec insertwaiters(find_restaurant_id('Ethiop'),'Trudy');
+exec insertwaiters(find_restaurant_id('Ethiop'),'Trisha');
+exec insertwaiters(find_restaurant_id('Ethiop'),'Tariq');
+exec insertwaiters(find_restaurant_id('Taj Mahal'),'Chap');
+exec insertwaiters(find_restaurant_id('Bull Roast'),'Hannah');
+/
+
+
+select * from waiters;
+/
+
+
+-- creating a procedure to insert value into the customers table, Paramaters which include the customer id, name, email and so on..
+create or replace procedure insert_into_customers
+(
+    Cname in customers.customer_name%type,
+    CEmail in customers.email%type,
+    CStreetAddress in customers.street_address%type,
+    CCity in customers.city%type, 
+    CState in customers.state%type,
+    CZip in customers.zip%type,
+    CC in customers.credit_card%type)
+is
+Begin 
+insert into Customers(customer_id,customer_name,email,street_address,city,state,zip,credit_card) 
+Values(Customer_ID_SEQ.nextval,CName,CEmail,CStreetAddress,CCity,CState,CZip,CC);
+commit;
+exception when no_data_found then 
+dbms_output.put_line('No data found');
+when others then
+DBMS_output.put_line('Too many rows');
+end;
+/
+
+
+-- calling the customer procedure
+Begin 
+insert_into_customers('Cust1','Cust1@yako.com','Pavani Residency','Hanover','Maryland','21045',221001001);
+insert_into_customers('Cust11','Cust11@yako.com','Arbors at Arundel','Elicott City','Maryland','21045',221001000);
+insert_into_customers('Cust3','Cust3@yako.com','WestLand Apartment','Arburs','Maryland','21046',221001101);
+insert_into_customers('Cust111','Cust111@yako.com','Mount Ridge','Hanover','Maryland','21045',221001111);
+insert_into_customers('CustNY1','CustNY1@yako.com','4th Street','Brookyln','New York','10045',221002111);
+insert_into_customers('CustNY2','CustNY2@yako.com','6th Street','Jersey City','New York','10045',221002211);
+insert_into_customers('CustNY3','CustNY3@yako.com','253rd Street','Manhatten','New York','10045',221002211);
+insert_into_customers('CustPA1','CustPA1@yako.com','53rd Street','Philadelphia','Pennsylvania','16822',221002231);
+insert_into_customers('CustPA2','CustPA2@yako.com','54th Street','Philadelphia','Pennsylvania','16822',221002232);
+insert_into_customers('CustPA3','CustPA3@yako.com','56th Street','Philadelphia','Pennsylvania','16822',221002233);
+insert_into_customers('CustPA4','CustPA4@yako.com','57th Street','Philadelphia','Pennsylvania','16822',221002234);
+insert_into_customers('CustPA5','CustPA5@yako.com','58th Street','Philadelphia','Pennsylvania','16822',221002235);
+insert_into_customers('CustPA6','CustPA6@yako.com','61th Street','Philadelphia','Pennsylvania','16822',221002237);
+End;
+/
+
+
+select * from customers;
+/
+
+
+--PROCEDURE to add records for ORDERS
+
+
+Create or replace procedure add_into_order(res_name in varchar, cus_name in varchar, menu_item_name in varchar, waiter_name in varchar, orderdate string, price in number) IS
+r_id number;
+c_id number;
+m_id number;
+w_id number;
+tip number;
+Begin
+        r_id := FIND_RESTAURANT_ID(res_name);
+        c_id := FIND_CUSTOMER_ID(cus_name);
+        m_id := FIND_MENU_ITEM_ID(menu_item_name);
+    w_id := FIND_WAITER_ID(waiter_name);
+    tip := (price/100)*20;
+    if r_id > 0 and c_id > 0 and m_id > 0 and w_id > 0 then
+                insert into orders VALUES(order_id_seq.NEXTVAL, r_id, c_id, m_id, w_id, TO_DATE(orderdate, 'yyyy/mm/dd'), price, tip);
+        else        
+                dbms_output.put_line('no such data found');        
+        end if;
+End;
+/
+
+
+-- calling the procedure 
+exec add_into_order('Bella_Italia', 'Cust1', 'Pizza', 'Mary','2022/3/10', 20);
+/
+exec add_into_order('Bella_Italia', 'Cust11', 'Spaghetti', 'Mary','2022/3/15', 30);
+/
+exec add_into_order('Bella_Italia', 'Cust11', 'Pizza', 'Mary','2022/3/15', 20);
+/
+exec add_into_order('Bull Roast', 'CustNY1', 'fillet_mignon', 'Hannah','2022/4/1', 60);
+/
+exec add_into_order('Bull Roast', 'CustNY1', 'fillet_mignon', 'Hannah','2022/4/2', 60);
+/
+exec add_into_order('Bull Roast', 'CustNY2', 'pork_loin', 'Hannah','2022/4/1', 15);
+/
+exec add_into_order('Ethiop', 'CustPA1', 'meat_chunks', 'Trisha','2022/4/1', 120);
+/
+exec add_into_order('Ethiop', 'CustPA1', 'meat_chunks', 'Trisha','2022/5/1', 120);
+/
+exec add_into_order('Ethiop', 'CustPA1', 'meat_chunks', 'Trisha','2022/5/10', 120);
+/
+exec add_into_order('Ethiop', 'CustPA2', 'legume_stew', 'Trevor','2022/5/1', 100);
+/
+exec add_into_order('Ethiop', 'CustPA2', 'legume_stew', 'Trevor','2022/5/11', 100);
+/
+
+
+select * from orders;
+
+
+
+
+--- MEMBER 1 REPORTS
+
+
+-------------------- Creating a procedure to display restaurants by cuisine---------------------
+
+
+create or replace procedure disp_rest(Cname in varchar) IS
+Cuisine_id int;
+Cursor c1 is select Restaurant_Name, Str_Address, city from restaurants ,CUISINE_TYPE  where restaurants.Cuisine_type_ID=cuisine_type.Cuisine_type_ID and restaurants.Cuisine_type_ID= cuisine_id ;
+Restaurant_Name varchar(30);
+Str_Address varchar(50);
+city varchar(30);
+begin
+cuisine_id:=Find_Cuisine_Type_Id(cname);
+    if cuisine_id>0 then
+        for i in c1
+            loop
+                dbms_output.put_line('Restaurant Name: '||i.Restaurant_Name||'  Address: '||i.Str_Address||', '||i.City);
+        end loop;    
+    end if;
+end;
+/
+---------Displaying restaurant by cuisine: Italian--------------------
+Begin
+ disp_rest('Italian');
+End;
+/
+---------Displaying restaurant by cuisine: Ethiopian--------------------
+Begin
+ disp_rest('Ethiopian');
+End;
+/
+
+
+create or replace procedure income_report
+is
+cursor c2 is select c.Cuisine_name as cuisine, r.state as statename, sum(o.Amount_paid) as income 
+from restaurants r, orders o, cuisine_type c where r.Restaurant_ID=o.restaurant_ID and c.Cuisine_Type_ID=r.Cuisine_Type_ID
+group by state, Cuisine_name 
+order by income desc;
+begin
+    for i in c2
+        loop
+            dbms_output.put_line('state: '||i.statename||'    Income: '||i.income);
+        end loop;
+end;
+/
+begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 1--------------- ');
+income_report;
+end;
+/
+
+
+
+
+
+
+-- End Of Member 1 Report-- 
+
+
+-- Member 2 Reports -- 
+Create or replace procedure waiter_tip_details
+is
+Cursor jay is
+select sum(o.tip), w.waiter_name,w.waiter_id
+from Orders o, Waiters w
+where o.waiter_id = w.waiter_id
+group by w.waiter_id, waiter_name;
+NAmeI Waiters.waiter_id%type;
+NAmeW Waiters.Waiter_name%type;
+SumW Orders.tip%type;
+begin
+open jay;
+loop
+fetch jay into SumW,NAmeW,NAmeI;
+exit when jay%notfound;
+dbms_output.put_line('ID of the waiter :' || NAmeI || '  name of the waiter : '||  NAmeW || '  Sum of tips: ' || SumW);
+end loop;
+close jay;
+end;
+/
+
+
+Begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 2--------------- ');
+waiter_tip_details;
+end;
+/
+
+
+
+
+create or replace procedure Tip_by_state_Waiter_details
+is
+Cursor Jaya is
+select r.State, SUM(o.tip)
+from Orders o, Restaurants r
+where o.restaurant_ID = r.Restaurant_ID
+group by r.State;
+NameT Restaurants.State%type;
+SumT Orders.tip%type;
+begin
+open jaya;
+loop
+fetch jaya into NameT,SumT;
+exit when jaya%notfound;
+dbms_output.put_line('Name of the state :' || NameT || '  Sum of tips: ' || SumT);
+end loop;
+close jaya;
+end;
+/
+
+
+Begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 2--------------- ');
+Tip_by_state_Waiter_details;
+End;
+/
+
+
+create or replace procedure waiterslist(
+restaurant_name_temp in varchar)
+is
+rid int := find_restaurant_id (restaurant_name_temp);
+begin
+for jp in
+(select waiter_id,waiter_name,restaurant_id from waiters where restaurant_id=rid)
+Loop
+Dbms_output.put_line('waiterID :'|| jp.waiter_id||'   waiter_name :'||jp.waiter_name||'   resturant ID :'||jp.restaurant_id);
+End loop;
+End;
+/
+
+
+Begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 2--------------- ');
+waiterslist('Ethiop');
+end;
+/
+
+
+
+
+-- Member 3 Reports --
+
+
+create or replace procedure report
+IS
+cursor c1 is select M.Menu_item_name, R.quantity, C.Cuisine_name from Menu_Item M,CUISINE_TYPE C,Restaurant_Inventory R where C.Cuisine_Type_ID=M.Cuisine_Type_ID AND
+M.Menu_item_ID=R.Menu_item_ID GROUP BY C.Cuisine_name,M.Menu_Item_name,R.quantity;
+R_quantity int;
+M_menu varchar (50);
+C_Tname varchar (50);
+Begin
+Open c1;
+loop
+fetch c1 into M_menu,R_quantity,C_Tname;
+exit when c1%notfound;
+dbms_output.put_line('Menu_Name: ' || M_menu || ', belong to Cusisine_Type: ' || C_Tname || ', have quantity: ' || R_quantity );
+End loop;
+EXCEPTION
+WHEN OTHERS THEN
+DBMS_OUTPUT.Put_line('Error Menu-Item is not found');
+End;
+/
+
+
+Begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 3--------------- ');
+Report;
+end;
+/
+-- end of member 3 reports -- 
+
+
+-- Member 4  reports --
+create or replace procedure Popular_Menu
+is
+cursor Test is select menu_item.menu_item_name,cuisine_name, count(orders.menu_item_id) as popularitem  from orders, menu_item, cuisine_type 
+where  menu_item.menu_item_id = orders.menu_item_id and menu_item.cuisine_type_id = cuisine_type.cuisine_type_id
+group by orders.menu_item_id, menu_item_name, cuisine_name
+order by popularitem desc;
+begin
+for Test1 in Test loop
+ dbms_output.put_line('Item Name: '|| Test1.menu_item_name|| ' popularitem: '|| Test1.popularitem);
+ end loop;
+ --close Test;
+ end;
+ 
+/ 
+begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 4--------------- ');
+Popular_Menu;
+end;
+/
+
+
+
+
+create or replace procedure Top_Restaurant
+is
+cursor Test2 is select restaurant_name, state, sum(amount_Paid) as total from restaurants, orders where restaurants.restaurant_id = orders.restaurant_id 
+group by restaurant_name, 
+state order by sum(amount_Paid) DESC;
+begin
+for Teat3 in Test2 loop
+dbms_output.put_line('Rest name: ' || Teat3.restaurant_name || ' Name of State: ' || Teat3.state || ' total amount: '||Teat3.total);
+end loop;
+end;
+/
+
+
+
+
+begin
+dbms_output.put_line('--------------- REPORT BY MEMBER 4--------------- ');
+Top_Restaurant;
+end;
+/
+
+
+
+
+
+
+
+
+--- MEMBER 5 REPORTS --
+
+
+CREATE OR REPLACE PROCEDURE reportBestCustomer
+IS
+Cursor x1 is SELECT * FROM (SELECT customer_id, SUM(amount_paid) AS total
+FROM orders GROUP BY customer_id ORDER BY total) WHERE ROWNUM <= 3; /*
+select statement returns names of three highest paying customers and their total amounts paid
+*/
+name varchar(50);
+BEGIN
+FOR random IN x1
+LOOP 
+name := FIND_CUSTOMER_NAME(random.customer_id);
+dbms_output.put_line(name);
+EXIT WHEN x1%NOTFOUND;
+END LOOP;
+EXCEPTION -- exception handling
+when no_data_found then dbms_output.put_line('No data found');
+when others then dbms_output.put_line('Error');
+COMMIT;
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE reportWorstCustomer
+IS
+Cursor x2 is SELECT * FROM (SELECT customer_id, SUM(amount_paid) AS total
+FROM orders GROUP BY customer_id ORDER BY total DESC) WHERE ROWNUM <= 3;
+/* select statement returns names of three lowest paying customers and their total amounts paid
+*/
+name varchar(50);
+BEGIN
+FOR y IN x2
+LOOP -- iterating through cursor with data from Orders table
+name := FIND_CUSTOMER_NAME(y.customer_id);
+dbms_output.put_line(name); -- printing customer name
+EXIT WHEN x2%NOTFOUND;
+END LOOP;
+EXCEPTION -- exception handling
+when no_data_found then dbms_output.put_line('No data found');
+when others then dbms_output.put_line('Error');
+COMMIT;
+END;
+/
+
+
+/* Procedure HighestLowestReport prints out the names of the three highest paying customers
+and the three lowest paying customers */
+CREATE OR REPLACE PROCEDURE reportBestAndWorstCustomer
+IS
+BEGIN
+dbms_output.put_line('Best Customers:');
+reportBestCustomer;
+dbms_output.put_line('Worst Customers:');
+reportWorstCustomer;
+EXCEPTION 
+when others then dbms_output.put_line('no data ');
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE StateOfGenerousCustomer
+IS
+-- cursor joins Customers table and Orders table
+Cursor x3 is SELECT Customers.state AS cust_state, SUM(Orders.tip) AS total
+FROM orders JOIN Customers ON Customers.customer_id = Orders.customer_id GROUP BY
+Customers.state ORDER BY total DESC;
+BEGIN
+dbms_output.put_line('States By Tip Amount:');
+FOR item IN x3
+LOOP -- iterating through data from Customers and Orders tables
+dbms_output.put_line(item.cust_state || ' ' || item.total); -- printing out state and total tips
+EXIT WHEN x3%NOTFOUND; -- loop end condition
+END LOOP;
+EXCEPTION -- exception handling
+when no_data_found then dbms_output.put_line('No data found');
+when others then dbms_output.put_line('Error');
+COMMIT;
+END;
+/
+BEGIN
+dbms_output.put_line('--------------- REPORT BY MEMBER 5--------------- ');
+reportBestAndWorstCustomer;
+END;
+/
+BEGIN
+dbms_output.put_line('--------------- REPORT BY MEMBER 5--------------- ');
+StateOfGenerousCustomer;
+END;
+/
